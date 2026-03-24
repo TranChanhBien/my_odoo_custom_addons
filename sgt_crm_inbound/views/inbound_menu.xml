@@ -1,0 +1,18 @@
+<odoo>
+  <!-- Action Inbound: inbound OR False -->
+  <record id="action_crm_lead_inbound" model="ir.actions.act_window">
+    <field name="name">CRM Inbound</field>
+    <field name="res_model">crm.lead</field>
+    <field name="view_mode">kanban,list,form</field>
+    <field name="domain">['|', ('x_lead_flow','=','inbound'), ('x_lead_flow','=',False)]</field>
+    <field name="context">{'default_x_lead_flow': 'inbound'}</field>
+  </record>
+
+  <!-- Root menu (App) đồng cấp CRM -->
+  <menuitem id="menu_crm_inbound_root"
+            name="CRM Inbound"
+            sequence="8"
+            action="sgt_crm_inbound.action_crm_lead_inbound"
+            web_icon="crm,static/description/icon.png"
+            groups="sgt_crm_inbound.group_crm_inbound_user"/>
+</odoo>

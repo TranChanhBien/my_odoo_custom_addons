@@ -1,0 +1,36 @@
+<odoo>
+    <record id="view_crm_lead_form_inherit_flow_final" model="ir.ui.view">
+        <field name="name">crm.lead.form.inherit.flow.final</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='tag_ids']" position="after">
+                <field name="x_lead_flow" widget="radio" options="{'horizontal': True}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_crm_opportunity_search_inherit_fixed" model="ir.ui.view">
+        <field name="name">crm.lead.search.opportunity.inherit.fixed</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.view_crm_case_opportunities_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='assigned_to_me']" position="after">
+                <separator/>
+                <filter string="Inbound" name="filter_inbound_custom" domain="[('x_lead_flow', '=', 'inbound')]"/>
+                <filter string="Outbound" name="filter_outbound_custom" domain="[('x_lead_flow', '=', 'outbound')]"/>
+            </xpath>
+            <xpath expr="//group" position="inside">
+                <filter string="Lead Flow" name="group_by_lead_flow_new" context="{'group_by': 'x_lead_flow'}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <menuitem id="sgt_crm_inbound.menu_crm_inbound_root"
+              name="Crm_Inbound"
+              groups="base.group_user"/> 
+
+    <menuitem id="sgt_crm_outbound.menu_crm_outbound_root"
+              name="Crm_Outbound"
+              groups="base.group_user"/>
+</odoo>

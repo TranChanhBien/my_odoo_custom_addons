@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_crm_lead_inbound_user,crm.lead inbound user,crm.model_crm_lead,sgt_crm_inbound.group_crm_inbound_user,1,1,1,1

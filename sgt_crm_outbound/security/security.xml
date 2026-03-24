@@ -1,0 +1,5 @@
+<odoo>
+  <record id="group_crm_outbound_user" model="res.groups">
+    <field name="name">CRM Outbound - User</field>
+  </record>
+</odoo>

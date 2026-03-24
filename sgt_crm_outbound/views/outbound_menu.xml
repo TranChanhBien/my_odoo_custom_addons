@@ -1,0 +1,18 @@
+<odoo>
+  <!-- Action Outbound -->
+  <record id="action_crm_lead_outbound" model="ir.actions.act_window">
+    <field name="name">CRM Outbound</field>
+    <field name="res_model">crm.lead</field>
+    <field name="view_mode">kanban,list,form</field>
+    <field name="domain">[('x_lead_flow','=','outbound')]</field>
+    <field name="context">{'default_x_lead_flow': 'outbound'}</field>
+  </record>
+
+  <!-- Root menu (App) đồng cấp CRM -->
+  <menuitem id="menu_crm_outbound_root"
+            name="CRM Outbound"
+            sequence="9"
+            action="sgt_crm_outbound.action_crm_lead_outbound"
+            web_icon="crm,static/description/icon.png"
+            groups="sgt_crm_outbound.group_crm_outbound_user"/>
+</odoo>

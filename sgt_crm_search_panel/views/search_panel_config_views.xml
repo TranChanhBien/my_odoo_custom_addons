@@ -1,0 +1,27 @@
+<odoo>
+    <record id="view_sgt_crm_search_panel_list" model="ir.ui.view">
+        <field name="name">sgt.crm.search.panel.field.list</field>
+        <field name="model">sgt.crm.search.panel.field</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="field_id"/>
+                <field name="icon"/>
+                <field name="is_active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_sgt_crm_search_panel_config" model="ir.actions.act_window">
+        <field name="name">Cấu hình Search Panel</field>
+        <field name="res_model">sgt.crm.search.panel.field</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_sgt_crm_search_panel_config"
+              name="Search Panel Filters"
+              parent="crm.crm_menu_config"
+              action="action_sgt_crm_search_panel_config"
+              sequence="100"/>
+</odoo>

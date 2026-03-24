@@ -1,0 +1,5 @@
+<odoo>
+  <record id="group_crm_inbound_user" model="res.groups">
+    <field name="name">CRM Inbound - User</field>
+  </record>
+</odoo>
