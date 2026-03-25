@@ -1,0 +1,11 @@
+<odoo>
+    <record id="view_crm_lead_tree_inherit_custom" model="ir.ui.view">
+        <field name="name">crm.lead.tree.inherit.custom</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_case_tree_view_oppor"/> <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="x_customer_rank" optional="hide"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

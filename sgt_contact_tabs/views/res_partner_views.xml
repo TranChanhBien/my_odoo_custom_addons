@@ -1,73 +1,40 @@
 <odoo>
-    <record id="view_partner_form_inherit_tabs_final" model="ir.ui.view">
-        <field name="name">res.partner.form.inherit.tabs.final</field>
+    <record id="view_crm_lead_tree_inherit_tabs" model="ir.ui.view">
+        <field name="name">crm.lead.tree.inherit.tabs</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_case_tree_view_oppor"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="x_lead_flow" string="Lead Flow" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_partner_form_inherit_tabs_dynamic" model="ir.ui.view">
+        <field name="name">res.partner.form.inherit.tabs.dynamic</field>
         <field name="model">res.partner</field>
         <field name="inherit_id" ref="base.view_partner_form"/>
         <field name="arch" type="xml">
             <xpath expr="//notebook" position="inside">
                 
                 <page string="Opportunities" name="tab_opportunities">
-                    <field name="opportunity_ids" context="{'default_partner_id': id}">
-                        <list editable="bottom" multi_edit="1" delete="0">
-                            <field name="name" string="Opportunity"/>
-                            <field name="contact_name" optional="show"/>
-                            <field name="email_from" optional="show"/>
-                            <field name="phone" optional="show"/>
-                            <field name="user_id" widget="many2one_avatar_user" optional="show"/>
-                            <field name="activity_ids" widget="list_activity" optional="hide"/>
-                            <field name="expected_revenue" sum="Tổng doanh thu dự kiến" optional="show"/>
-                            <field name="probability" optional="show"/>
-                            <field name="stage_id" optional="show"/>
-                            <field name="tag_ids" widget="many2many_tags" optional="hide"/>
-                            <field name="city" optional="hide"/>
-                            <field name="country_id" optional="hide"/>
-                        </list>
-                    </field>
+                    <field name="opportunity_ids" 
+                        context="{'tree_view_ref': 'crm.crm_case_tree_view_oppor', 'default_partner_id': id}"/>
                 </page>
 
                 <page string="Sales" name="tab_sales">
-                    <field name="sale_order_ids" context="{'default_partner_id': id}">
-                        <list editable="bottom" multi_edit="1" delete="0">
-                            <field name="name" string="Number" readonly="1" decoration-bf="1"/>
-                            <field name="currency_id" column_invisible="True"/> 
-                            <field name="date_order" optional="show"/>
-                            <field name="user_id" widget="many2one_avatar_user" optional="show"/>
-                            <field name="activity_ids" widget="list_activity" optional="show"/>
-                            <field name="amount_untaxed" sum="Chưa thuế" optional="hide"/>
-                            <field name="amount_total" sum="Tổng tiền" decoration-bf="1" optional="show"/>
-                            <field name="invoice_status" widget="badge" optional="show" decoration-info="invoice_status == 'to invoice'" decoration-success="invoice_status == 'invoiced'"/>
-                            <field name="state" widget="badge" optional="show" decoration-success="state == 'sale'" decoration-info="state in ('draft', 'sent')"/>
-                        </list>
-                    </field>
+                    <field name="sale_order_ids" 
+                           context="{'tree_view_ref': 'sale.view_order_tree', 'default_partner_id': id}"/>
                 </page>
 
                 <page string="Invoices" name="tab_invoices">
-                    <field name="invoice_ids" context="{'default_partner_id': id, 'default_move_type': 'out_invoice'}">
-                        <list editable="bottom" multi_edit="1" delete="0">
-                            <field name="name" string="Number" decoration-bf="1"/>
-                            <field name="currency_id" column_invisible="True"/>
-                            <field name="invoice_date" optional="show"/>
-                            <field name="invoice_date_due" optional="show"/>
-                            <field name="user_id" widget="many2one_avatar_user" optional="show"/>
-                            <field name="amount_total_signed" string="Total" sum="Total" decoration-bf="1" optional="show"/>
-                            <field name="payment_state" widget="badge" optional="show" decoration-danger="payment_state == 'not_paid'" decoration-warning="payment_state == 'partial'" decoration-success="payment_state in ('paid', 'in_payment')"/>
-                            <field name="state" widget="badge" optional="show" decoration-success="state == 'posted'" decoration-info="state == 'draft'"/>
-                        </list>
-                    </field>
+                    <field name="invoice_ids" 
+                           context="{'tree_view_ref': 'account.view_out_invoice_tree', 'default_partner_id': id, 'default_move_type': 'out_invoice'}"/>
                 </page>
 
                 <page string="Meetings" name="tab_meetings">
-                    <field name="meeting_ids">
-                        <list editable="bottom" multi_edit="1" delete="0">
-                            <field name="name" string="Content" decoration-bf="1"/>
-                            <field name="start" optional="show"/>
-                            <field name="stop" optional="show"/>
-                            <field name="duration" widget="float_time" optional="show"/>
-                            <field name="location" optional="hide"/>
-                            <field name="partner_ids" widget="many2many_tags_avatar" optional="show"/>
-                            <field name="categ_ids" widget="many2many_tags" optional="hide"/>
-                        </list>
-                    </field>
+                    <field name="meeting_ids" 
+                           context="{'tree_view_ref': 'calendar.view_calendar_event_tree'}"/>
                 </page>
 
             </xpath>
