@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_sgt_invoice_search_panel_list" model="ir.ui.view">
+        <field name="name">sgt.invoice.search.panel.field.list</field>
+        <field name="model">sgt.invoice.search.panel.field</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="field_id"/>
+                <field name="icon"/>
+                <field name="is_active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_sgt_invoice_search_panel_config" model="ir.actions.act_window">
+        <field name="name">Cấu hình Search Panel Invoices</field>
+        <field name="res_model">sgt.invoice.search.panel.field</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_sgt_invoice_search_panel_config"
+              name="Invoice Search Panel"
+              parent="account.menu_finance_configuration"
+              action="action_sgt_invoice_search_panel_config"
+              sequence="100"/>
+</odoo>

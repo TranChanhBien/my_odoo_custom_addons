@@ -47,6 +47,7 @@ class ResPartner(models.Model):
                 # Chèn thẻ XML như cũ
                 etree.SubElement(searchpanel, 'field', {
                     'name': field_name,
+                    'string': config_field.name,
                     'icon': config_field.icon or 'fa-users',
                     'enable_counters': '1',
                     'select': 'multi'
