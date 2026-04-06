@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="view_post_link_list" model="ir.ui.view">
+            <field name="name">post.link.list</field>
+            <field name="model">post.link</field>
+            <field name="arch" type="xml">
+                <list string="Post Links">
+                    <field name="name" decoration-bf="1"/>
+                    <field name="post_url" widget="url"/>
+                    <field name="sale_order_id"/>
+                    <field name="partner_id"/>
+                    <field name="state" widget="badge" 
+                           decoration-success="state == 'published'" 
+                           decoration-info="state == 'draft'"
+                           decoration-danger="state == 'cancel'"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="view_post_link_form" model="ir.ui.view">
+            <field name="name">post.link.form</field>
+            <field name="model">post.link</field>
+            <field name="arch" type="xml">
+                <form>
+                    <header>
+                        <button name="action_publish" string="Publish" type="object" 
+                                class="oe_highlight" invisible="state != 'draft'"/>
+                        
+                        <button name="action_draft" string="Set to Draft" type="object" 
+                                invisible="state == 'draft'"/>
+                        
+                        <button name="action_cancel" string="Cancel" type="object" 
+                                invisible="state in ('cancel')"/>
+
+                        <field name="state" widget="statusbar" statusbar_visible="draft,published"/>
+                    </header>
+                    <sheet>
+                        <div class="oe_title">
+                            <h1><field name="name" readonly="1"/></h1>
+                        </div>
+                        <group>
+                            <group string="Post Details">
+                                <field name="post_url" widget="url" placeholder="e.g. https://facebook.com/post/1"/>
+                            </group>
+                            <group string="System Connections">
+                                <field name="sale_order_id" options="{'no_create': True}"/>
+                                <field name="partner_id" force_save="1"/>
+                                <field name="so_salesperson_id" widget="many2one_avatar_user" force_save="1"/>
+                                <field name="responsible_id" widget="many2one_avatar_user"/>
+                            </group>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="action_post_link" model="ir.actions.act_window">
+            <field name="name">Post Management</field>
+            <field name="res_model">post.link</field>
+            <field name="view_mode">list,form</field>
+        </record>
+
+        <menuitem id="menu_post_link_root" name="Post Management" sequence="10"/>
+        <menuitem id="menu_post_link_main" name="Links" parent="menu_post_link_root" action="action_post_link"/>
+    </data>
+</odoo>

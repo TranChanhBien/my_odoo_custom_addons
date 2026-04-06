@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="view_task_form_inherit_integration_context" model="ir.ui.view">
+            <field name="name">project.task.form.inherit.integration.context</field>
+            <field name="model">project.task</field>
+            <field name="inherit_id" ref="post_management.view_task_form_inherit_post_link"/>
+            <field name="arch" type="xml">
+                <xpath expr="//sheet" position="inside">
+                    <field name="pm_sale_order_id" invisible="1"/>
+                    <field name="pm_so_salesperson_id" invisible="1"/>
+                </xpath>
+
+                <xpath expr="//field[@name='post_link_ids']" position="attributes">
+                    <attribute name="context">{
+                        'default_sale_order_id': pm_sale_order_id,
+                        'default_partner_id': partner_id,
+                        'default_so_salesperson_id': pm_so_salesperson_id,
+                        'default_task_id': id
+                    }</attribute>
+                </xpath>
+            </field>
+        </record>
+    </data>
+</odoo>

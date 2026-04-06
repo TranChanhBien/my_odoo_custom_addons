@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="view_task_form_inherit_post_link" model="ir.ui.view">
+            <field name="name">project.task.form.inherit.post.link</field>
+            <field name="model">project.task</field>
+            <field name="inherit_id" ref="project.view_task_form2"/>
+            <field name="arch" type="xml">
+                <xpath expr="//notebook" position="inside">
+                    <page string="Post Links" name="post_links_tab">
+                        <field name="post_link_ids">
+                            <list editable="bottom">
+                                <field name="name" string="Reference" readonly="1"/>
+                                <field name="post_url" widget="url" placeholder="Dán link vào đây..."/>
+                                <field name="sale_order_id" readonly="1" force_save="1"/>
+                                <field name="partner_id" readonly="1" force_save="1"/>
+                                <field name="so_salesperson_id" widget="many2one_avatar_user" readonly="1" force_save="1"/>
+                                <field name="state" widget="badge" decoration-success="state == 'published'"/>
+                            </list>
+                        </field>
+                    </page>
+                </xpath>
+            </field>
+        </record>
+    </data>
+</odoo>
