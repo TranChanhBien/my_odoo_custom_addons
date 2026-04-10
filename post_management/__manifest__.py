@@ -11,6 +11,12 @@
         'views/project_task_button_views.xml',
         'views/project_task_integration_views.xml',
     ],
+    'assets': {
+        'web.assets_backend': [
+            'post_management/static/src/js/image_preview.js',
+            'post_management/static/src/css/image_preview.css',
+        ],
+    },
     'installable': True,
     'application': True,
     'license': 'LGPL-3',

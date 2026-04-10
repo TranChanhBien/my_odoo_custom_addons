@@ -19,6 +19,10 @@
                         'default_task_id': id
                     }</attribute>
                 </xpath>
+                <!-- 🔥 THÊM FIELD proof_image vào list -->
+                <xpath expr="//field[@name='post_link_ids']/list" position="inside">
+                    <field name="proof_image" widget="paste_image"/>
+                </xpath>
             </field>
         </record>
     </data>

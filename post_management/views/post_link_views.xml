@@ -8,6 +8,7 @@
                 <list string="Post Links">
                     <field name="name" decoration-bf="1"/>
                     <field name="post_url" widget="url"/>
+                    <field name="proof_image" string="Proof" optional="show"/>
                     <field name="sale_order_id"/>
                     <field name="partner_id"/>
                     <field name="state" widget="badge" 
@@ -50,6 +51,14 @@
                                 <field name="responsible_id" widget="many2one_avatar_user"/>
                             </group>
                         </group>
+                        <separator string="Proof Content"/>
+                        <field name="proof_image" 
+                            widget="html" 
+                            options="{
+                                'style-inline': true,
+                                'toolbar': true,
+                                'paste': true
+                            }"/>
                     </sheet>
                 </form>
             </field>

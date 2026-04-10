@@ -8,6 +8,7 @@ class PostLink(models.Model):
 
     name = fields.Char(string='Reference', required=True, copy=False, readonly=True, default=lambda self: _('New'))
     post_url = fields.Char(string='Post URL', required=True)
+    proof_image = fields.Html(string='Proof Image')
     state = fields.Selection([
         ('draft', 'Draft'),
         ('published', 'Published'),
