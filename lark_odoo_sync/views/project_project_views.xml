@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="edit_project_lark_sync" model="ir.ui.view">
+        <field name="name">project.project.form.inherit.lark.sync</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.edit_project"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='settings']" position="inside">
+                <group string="Larksuite Sync" name="lark_sync_group">
+                    <!-- Cờ đồng bộ: Chỉ Quản lý mới được tương tác -->
+                    <field name="lark_sync_enabled" groups="project.group_project_manager" widget="boolean_toggle"/>
+                    <field name="lark_tasklist_id"/>
+                    <field name="lark_tasklist_url" widget="url"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

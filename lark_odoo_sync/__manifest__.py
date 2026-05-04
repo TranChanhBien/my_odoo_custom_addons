@@ -1,0 +1,21 @@
+{
+    'name': 'Lark Odoo Integration',
+    'version': '1.0',
+    'category': 'Project',
+    'summary': 'Đồng bộ hai chiều Task và Project giữa Odoo và Larksuite',
+    'author': 'Your Team',
+    'depends': ['base', 'project'],
+    'data': [
+        'security/ir.model.access.csv',
+        'security/lark_security_rules.xml',
+        'views/lark_status_mapping_views.xml',
+        'data/cron_jobs.xml',
+        'views/res_config_settings_views.xml',
+        'views/res_users_views.xml',
+        'views/project_project_views.xml',
+        'views/project_task_views.xml', 
+    ],
+    'installable': True,
+    'application': False,
+    'license': 'LGPL-3',
+}

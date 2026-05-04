@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_lark_status_mapping_list" model="ir.ui.view">
+        <field name="name">lark.status.mapping.list</field>
+        <field name="model">lark.status.mapping</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="odoo_stage_id"/>
+                <field name="lark_status_key"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_lark_status_mapping_form" model="ir.ui.view">
+        <field name="name">lark.status.mapping.form</field>
+        <field name="model">lark.status.mapping</field>
+        <field name="arch" type="xml">
+            <form string="Lark Status Mapping">
+                <sheet>
+                    <group>
+                        <field name="odoo_stage_id"/>
+                        <field name="lark_status_key"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_lark_status_mapping" model="ir.actions.act_window">
+        <field name="name">Lark Status Mapping</field>
+        <field name="res_model">lark.status.mapping</field>
+        <field name="view_mode">list,form</field>
+        <field name="target">current</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Thiết lập quy tắc ánh xạ trạng thái đầu tiên!
+            </p>
+        </field>
+    </record>
+
+    <record id="action_lark_status_mapping_view_list" model="ir.actions.act_window.view">
+        <field name="sequence" eval="1"/>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_lark_status_mapping_list"/>
+        <field name="act_window_id" ref="action_lark_status_mapping"/>
+    </record>
+
+    <record id="action_lark_status_mapping_view_form" model="ir.actions.act_window.view">
+        <field name="sequence" eval="2"/>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_lark_status_mapping_form"/>
+        <field name="act_window_id" ref="action_lark_status_mapping"/>
+    </record>
+
+    <!-- Menu (ĐÃ KHÓA BẢO MẬT: Chỉ Quản lý mới nhìn thấy) -->
+    <menuitem id="menu_lark_status_mapping"
+              name="Lark Status Mapping"
+              parent="project.menu_project_config"
+              action="action_lark_status_mapping"
+              sequence="100"
+              groups="project.group_project_manager"/>
+</odoo>

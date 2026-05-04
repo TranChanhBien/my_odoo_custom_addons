@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_lark_sync" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.lark.sync</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="project.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//app[@name='project']" position="inside">
+                <block title="Tích hợp Larksuite" name="lark_integration_setting_container">
+                    
+                    <setting id="lark_api_id_setting" string="Lark App ID" help="Nhập App ID từ Lark Developer Console để định danh ứng dụng.">
+                        <field name="lark_app_id" placeholder="VD: cli_..."/>
+                    </setting>
+
+                    <setting id="lark_api_secret_setting" string="Lark App Secret" help="Mã bảo mật ứng dụng từ Lark.">
+                        <field name="lark_app_secret" password="True"/>
+                    </setting>
+
+                    <setting id="lark_fallback_user_setting" string="Người nhận Task dự phòng" help="Hệ thống sẽ gán công việc cho người này nếu không tra cứu được tài khoản tương ứng từ Lark.">
+                        <field name="lark_fallback_user_id"/>
+                    </setting>
+                    
+                    <div class="mt16">
+                        <button name="action_test_lark_connection" type="object" string="Kiểm tra kết nối Lark" class="btn-primary" icon="fa-plug"/>
+                        <button name="action_sync_lark_users_by_email" type="object" string="Đồng bộ ID Nhân sự (Theo Email)" class="btn-secondary ms-2" icon="fa-users"/>
+                    </div>
+
+                    <div class="row mt16">
+                        <label for="lark_webhook_token" class="col-lg-4 o_light_label"/>
+                        <field name="lark_webhook_token" password="True"/>
+                    </div>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>
