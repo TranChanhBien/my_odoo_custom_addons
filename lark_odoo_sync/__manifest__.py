@@ -8,12 +8,12 @@
     'data': [
         'security/ir.model.access.csv',
         'security/lark_security_rules.xml',
-        'views/lark_status_mapping_views.xml',
         'data/cron_jobs.xml',
         'views/res_config_settings_views.xml',
         'views/res_users_views.xml',
         'views/project_project_views.xml',
         'views/project_task_views.xml', 
+        'views/project_task_type_views.xml'
     ],
     'installable': True,
     'application': False,

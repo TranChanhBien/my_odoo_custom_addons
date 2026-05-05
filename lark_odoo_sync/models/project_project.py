@@ -80,3 +80,59 @@ class ProjectProject(models.Model):
                 })
         else:
             raise UserError(f"Lỗi từ Lark khi thao tác Task List: {res_json.get('msg')}")
+
+    def action_force_sync_from_lark(self):
+        """Kéo toàn bộ Task từ Lark Task List về Odoo khi người dùng bấm nút"""
+        self.ensure_one()
+        
+        if not getattr(self, 'lark_sync_enabled', True) or not getattr(self, 'lark_tasklist_id', False):
+            raise UserError("Dự án này chưa được cấu hình đồng bộ Lark hoặc thiếu Mã Task List.")
+            
+        token = self.env['ir.config_parameter'].sudo().get_param('lark_odoo_sync.tenant_token')
+        if not token:
+            raise UserError("Thiếu cấu hình Tenant Token của Lark.")
+        
+        url = f"https://open.larksuite.com/open-apis/task/v2/tasklists/{self.lark_tasklist_id}/tasks"
+        headers = {'Authorization': f'Bearer {token}'}
+        
+        try:
+            response = requests.get(url, headers=headers, timeout=10)
+            res_json = response.json()
+            
+            if res_json.get('code') == 0:
+                tasks = res_json.get('data', {}).get('items', [])
+                count_new = 0
+                count_updated = 0 # Thêm biến đếm số lượng Task được cập nhật
+                
+                # Duyệt qua từng Task mà Lark trả về
+                for task in tasks:
+                    lark_id = task.get('guid')
+                    
+                    exists = self.env['project.task'].sudo().search([('lark_task_id', '=', lark_id)], limit=1)
+                    
+                    if not exists:
+                        # 1. NẾU CHƯA CÓ -> TẠO MỚI
+                        self.env['project.task'].sudo()._sync_new_task_from_lark(lark_id)
+                        count_new += 1
+                    else:
+                        # 2. NẾU ĐÃ CÓ -> ÉP CẬP NHẬT LẠI TOÀN BỘ (Tên, Ghi chú, Trạng thái, Người phụ trách)
+                        exists.sudo()._sync_from_lark()
+                        count_updated += 1
+                
+                return {
+                    'type': 'ir.actions.client',
+                    'tag': 'display_notification',
+                    'params': {
+                        'title': 'Đồng bộ Lark thành công!',
+                        'message': f'Đã tạo mới {count_new} công việc và cập nhật {count_updated} công việc hiện có.',
+                        'type': 'success',
+                        'sticky': False,
+                    }
+                }
+            else:
+                raise UserError(f"Lark từ chối trả dữ liệu: {res_json.get('msg')}")
+                
+        except UserError as ue:
+            raise ue
+        except Exception as e:
+            raise UserError(f"Lỗi kết nối khi quét dữ liệu: {str(e)}")

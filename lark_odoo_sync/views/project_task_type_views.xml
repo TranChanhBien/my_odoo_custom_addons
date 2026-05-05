@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_task_type_edit_inherit_lark" model="ir.ui.view">
+        <field name="name">project.task.type.form.inherit.lark</field>
+        <field name="model">project.task.type</field>
+        <field name="inherit_id" ref="project.task_type_edit"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group" position="inside">
+                <group string="Larksuite Sync (Đồng bộ Lark)" name="lark_sync_config">
+                    <field name="is_lark_default_stage"/>
+                    <field name="is_lark_done_stage"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

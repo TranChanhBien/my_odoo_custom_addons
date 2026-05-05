@@ -249,48 +249,136 @@ class ProjectTask(models.Model):
                 if 'description' in lark_task:
                     update_vals['description'] = lark_task['description']
 
-                # 3. Đồng bộ Trạng thái Kanban (Trùm cuối)
-                # Trên Lark, completed_at = '0' nghĩa là chưa xong, khác '0' là đã xong
+                # 3. Đồng bộ Trạng thái Kanban theo logic NÚT GẠT (Cấu hình UI mới)
                 completed_at = lark_task.get('completed_at', '0')
                 is_done = completed_at != '0'
+                target_stage = False
+                
+                # Ưu tiên tìm Stage có chứa nút gạt trong chính Dự án này
+                if self.project_id:
+                    domain_done = [('is_lark_done_stage', '=', True), ('project_ids', 'in', self.project_id.id)]
+                    domain_default = [('is_lark_default_stage', '=', True), ('project_ids', 'in', self.project_id.id)]
+                    
+                    if is_done:
+                        target_stage = self.env['project.task.type'].sudo().search(domain_done, limit=1)
+                    if not target_stage: 
+                        target_stage = self.env['project.task.type'].sudo().search(domain_default, limit=1)
+                
+                # Nếu không tìm thấy, quét rộng ra toàn hệ thống
+                if not target_stage:
+                    if is_done:
+                        target_stage = self.env['project.task.type'].sudo().search([('is_lark_done_stage', '=', True)], limit=1)
+                    else:
+                        target_stage = self.env['project.task.type'].sudo().search([('is_lark_default_stage', '=', True)], limit=1)
 
-                # Tìm trong Bảng Mapping xem cột nào tương ứng với Done/Todo
-                mapping = self.env['lark.status.mapping'].sudo().search([
-                    ('lark_status_key', '=', 'done' if is_done else 'todo')
-                ], limit=1)
+                if target_stage:
+                    update_vals['stage_id'] = target_stage.id
 
-                if mapping:
-                    update_vals['stage_id'] = mapping.odoo_stage_id.id
-
-                # --- ĐỒNG BỘ NGƯỜI PHỤ TRÁCH ---
+                # 4. Đồng bộ Người phụ trách (Assignee)
                 lark_members = lark_task.get('members', [])
                 odoo_user_ids = []
                 
                 for member in lark_members:
-                    # Chỉ xử lý những người có vai trò là assignee (người thực hiện)
                     if member.get('role') == 'assignee' and member.get('type') == 'user':
                         lark_user_id = member.get('id')
-                        # Tìm user Odoo tương ứng qua mã lark_user_id
                         user = self.env['res.users'].sudo().search([('lark_user_id', '=', lark_user_id)], limit=1)
                         if user:
                             odoo_user_ids.append(user.id)
                 
-                # Nếu trên Lark có người phụ trách nhưng Odoo không tìm thấy ai khớp
-                if not odoo_user_ids and fallback_user_id:
-                    odoo_user_ids.append(fallback_user_id)
-                
                 if odoo_user_ids:
-                    # Cập nhật danh sách người phụ trách (Many2many)
                     update_vals['user_ids'] = [(6, 0, odoo_user_ids)]
-                # --------------------------------------
 
-                # 4. Ghi dữ liệu vào Database
+                # 5. Ghi dữ liệu vào Database
                 if update_vals:
-                    # Bắt buộc dùng from_lark=True để chống vòng lặp (Odoo không đẩy ngược lại Lark nữa)
+                    # from_lark=True để ngăn vòng lặp ngược
                     self.with_context(from_lark=True).sudo().write(update_vals)
                     _logger.info(f"Đồng bộ ngược thành công Task '{self.name}' từ Lark.")
 
         except Exception as e:
             _logger.error(f"Lỗi khi kéo dữ liệu từ Lark: {str(e)}")
+
+    @api.model
+    def _sync_new_task_from_lark(self, lark_task_id):
+        """Hàm xử lý tạo mới Task trên Odoo khi nhận tín hiệu từ Lark"""
+        existing_task = self.search([('lark_task_id', '=', lark_task_id)], limit=1)
+        if existing_task:
+            return
+
+        ICPSudo = self.env['ir.config_parameter'].sudo()
+        token = ICPSudo.get_param('lark_odoo_sync.tenant_token')
+        if not token:
+            return
+
+        url = f"https://open.larksuite.com/open-apis/task/v2/tasks/{lark_task_id}"
+        headers = {'Authorization': f'Bearer {token}'}
+
+        try:
+            response = requests.get(url, headers=headers, timeout=10)
+            res_json = response.json()
+
+            if res_json.get('code') == 0:
+                # CHÍNH LÀ DÒNG NÀY: Khai báo biến lark_task rất dễ bị mất khi copy/paste
+                lark_task = res_json.get('data', {}).get('task', {})
+                
+                # 1. BỘ LỌC DỰ ÁN
+                project_id = False
+                tasklists = lark_task.get('tasklists', [])
+                for tl in tasklists:
+                    lark_list_id = tl.get('tasklist_guid')
+                    project = self.env['project.project'].sudo().search([('lark_tasklist_id', '=', lark_list_id)], limit=1)
+                    if project:
+                        project_id = project.id
+                        break
+                
+                if not project_id:
+                    return
+
+                # 2. CHUẨN BỊ DỮ LIỆU
+                create_vals = {
+                    'name': lark_task.get('summary', 'New Lark Task'),
+                    'description': lark_task.get('description', ''),
+                    'lark_task_id': lark_task.get('guid'),
+                    'lark_url': lark_task.get('url'),
+                    'project_id': project_id,
+                }
+
+                # Mapping Hạn chót
+                due_info = lark_task.get('due', {})
+                if due_info and due_info.get('timestamp') and due_info.get('timestamp') != '0':
+                    timestamp_sec = int(due_info['timestamp']) / 1000.0
+                    create_vals['date_deadline'] = fields.Datetime.from_timestamp(timestamp_sec)
+
+                # 3. XỬ LÝ TRẠNG THÁI (STAGE)
+                completed_at = lark_task.get('completed_at', '0')
+                is_done = completed_at != '0'
+                target_stage = False
+                
+                if project_id:
+                    domain_done = [('is_lark_done_stage', '=', True), ('project_ids', 'in', project_id)]
+                    domain_default = [('is_lark_default_stage', '=', True), ('project_ids', 'in', project_id)]
+                    
+                    if is_done:
+                        target_stage = self.env['project.task.type'].sudo().search(domain_done, limit=1)
+                    if not target_stage: 
+                        target_stage = self.env['project.task.type'].sudo().search(domain_default, limit=1)
+                
+                if not target_stage:
+                    if is_done:
+                        target_stage = self.env['project.task.type'].sudo().search([('is_lark_done_stage', '=', True)], limit=1)
+                    else:
+                        target_stage = self.env['project.task.type'].sudo().search([('is_lark_default_stage', '=', True)], limit=1)
+
+                if target_stage:
+                    create_vals['stage_id'] = target_stage.id
+
+                # 4. LƯU VÀO DATABASE
+                new_task = self.with_context(from_lark=True).sudo().create(create_vals)
+                
+                # Gọi lại hàm cập nhật để map Assignee
+                new_task._sync_from_lark()
+
+        except Exception as e:
+            # Đổi câu báo lỗi để biết chính xác nó đang nổ ở hàm nào
+            raise Exception(f"Lỗi ở hàm Tạo Mới (_sync_new_task_from_lark): {str(e)}")
 
     
