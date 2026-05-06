@@ -3,6 +3,8 @@ import json
 import logging
 import datetime
 import time
+from markupsafe import Markup
+import base64
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
 
@@ -294,6 +296,11 @@ class ProjectTask(models.Model):
                     self.with_context(from_lark=True).sudo().write(update_vals)
                     _logger.info(f"Đồng bộ ngược thành công Task '{self.name}' từ Lark.")
 
+                # 6. Kéo luôn Comment mới nhất về sau khi cập nhật Task
+                self._sync_comments_from_lark()
+
+                # 7. Kéo toàn bộ Ảnh/File đính kèm
+                self._sync_attachments_from_lark()
         except Exception as e:
             _logger.error(f"Lỗi khi kéo dữ liệu từ Lark: {str(e)}")
 
@@ -381,4 +388,140 @@ class ProjectTask(models.Model):
             # Đổi câu báo lỗi để biết chính xác nó đang nổ ở hàm nào
             raise Exception(f"Lỗi ở hàm Tạo Mới (_sync_new_task_from_lark): {str(e)}")
 
-    
+    def _sync_comments_from_lark(self):
+        """
+        Đồng bộ bình luận từ Lark Task API v2 vào hệ thống Odoo Chatter.
+        - Tự động bỏ qua các bình luận đã tồn tại dựa trên marker HTML ẩn.
+        - Chuyển đổi cảnh báo thân thiện đối với các hình ảnh dán trực tiếp (Inline Images).
+        """
+        self.ensure_one()
+        token = self.env['ir.config_parameter'].sudo().get_param('lark_odoo_sync.tenant_token')
+        if not token or not self.lark_task_id:
+            return
+            
+        url = f"https://open.larksuite.com/open-apis/task/v2/comments?resource_type=task&resource_id={self.lark_task_id}"
+        headers = {'Authorization': f'Bearer {token}'}
+        
+        try:
+            res = requests.get(url, headers=headers, timeout=10)
+            res_json = res.json()
+            
+            if res_json.get('code') == 0:
+                comments = res_json.get('data', {}).get('items', [])
+                comments.reverse() # Xử lý theo thứ tự thời gian (cũ -> mới)
+                
+                for comment in comments:
+                    comment_id = comment.get('id')
+                    content = comment.get('content', '')
+                    
+                    # 1. Kiểm tra tồn tại (Anti-duplication)
+                    marker = f"lark_cmt_{comment_id}"
+                    existing_msg = self.env['mail.message'].sudo().search([
+                        ('model', '=', 'project.task'),
+                        ('res_id', '=', self.id),
+                        ('body', 'ilike', f"%{marker}%")
+                    ], limit=1)
+                    
+                    if existing_msg:
+                        continue 
+                        
+                    # 2. Xử lý định danh
+                    creator_id = comment.get('creator', {}).get('id')
+                    author_id = self.env.user.partner_id.id 
+                    
+                    lark_user = self.env['res.users'].sudo().search([('lark_user_id', '=', creator_id)], limit=1)
+                    if lark_user:
+                        author_id = lark_user.partner_id.id
+                    else:
+                        content = f"<b>[Hệ thống Lark]</b>: {content}"
+
+                    # 3. Xử lý giới hạn bảo mật API của Lark đối với ảnh dán trực tiếp
+                    if '[Image]' in content or '[image]' in content.lower():
+                        info_msg = "<br/><i style='color:#17a2b8;'>[Có một hình ảnh được dán trực tiếp trong bình luận. Vui lòng xem trên ứng dụng Lark]</i>"
+                        content = content.replace('[Image]', info_msg).replace('[image]', info_msg)
+                        
+                    # 4. Ghi nhận dữ liệu
+                    raw_html = f"<p>{content}</p><div style='display:none; font-size:0px;'>{marker}</div>"
+                    
+                    self.sudo().message_post(
+                        body=Markup(raw_html), 
+                        author_id=author_id, 
+                        message_type='comment',
+                        subtype_xmlid='mail.mt_comment'
+                    )
+        except Exception as e:
+            _logger.error(f"[Lark Sync] Lỗi đồng bộ bình luận cho Task {self.name}: {str(e)}")
+
+
+    def _sync_attachments_from_lark(self):
+        """
+        Đồng bộ tập tin đính kèm (Attachments) từ Lark Task về Odoo.
+        - Gọi API trung gian để lấy đường dẫn tải xuống tạm thời.
+        - Mã hóa Base64 và lưu trữ dưới dạng ir.attachment.
+        """
+        self.ensure_one()
+        token = self.env['ir.config_parameter'].sudo().get_param('lark_odoo_sync.tenant_token')
+        if not token or not self.lark_task_id:
+            return
+            
+        url_list = "https://open.larksuite.com/open-apis/task/v2/attachments"
+        headers = {'Authorization': f'Bearer {token}'}
+        params = {'resource_type': 'task', 'resource_id': self.lark_task_id}
+        
+        try:
+            res = requests.get(url_list, headers=headers, params=params, timeout=10)
+            data = res.json()
+            
+            if data.get('code') == 0:
+                attachments = data.get('data', {}).get('items', [])
+                
+                for att in attachments:
+                    att_guid = att.get('guid')
+                    
+                    existing = self.env['ir.attachment'].sudo().search([
+                        ('res_model', '=', 'project.task'),
+                        ('res_id', '=', self.id),
+                        ('description', '=', f'lark_att_{att_guid}')
+                    ], limit=1)
+                    
+                    if existing:
+                        continue
+                        
+                    # Yêu cầu quyền tải tập tin
+                    url_detail = f"https://open.larksuite.com/open-apis/task/v2/attachments/{att_guid}"
+                    res_detail = requests.get(url_detail, headers=headers, params=params, timeout=10)
+                    data_detail = res_detail.json()
+                    
+                    if data_detail.get('code') == 0:
+                        att_info = data_detail.get('data', {}).get('attachment', {})
+                        name = att_info.get('name', 'lark_file.png')
+                        download_url = att_info.get('url')
+                        
+                        if download_url:
+                            res_download = requests.get(download_url, headers=headers, timeout=20)
+                            
+                            if res_download.status_code == 200:
+                                encoded_data = base64.b64encode(res_download.content)
+                                new_att = self.env['ir.attachment'].sudo().create({
+                                    'name': name,
+                                    'type': 'binary',
+                                    'datas': encoded_data,
+                                    'res_model': 'project.task',
+                                    'res_id': self.id,
+                                    'description': f'lark_att_{att_guid}',
+                                    'mimetype': 'image/png' if name.endswith('.png') else ('image/jpeg' if name.endswith('.jpg') else 'application/octet-stream')
+                                })
+                                
+                                self.sudo().message_post(
+                                    body=Markup(f"Đã đồng bộ tệp đính kèm từ Lark: <b>{name}</b>"),
+                                    attachment_ids=[new_att.id],
+                                    subtype_xmlid='mail.mt_comment'
+                                )
+                            else:
+                                _logger.error(f"[Lark Sync] Từ chối tải tập tin {name} (HTTP {res_download.status_code})")
+                        else:
+                            _logger.warning(f"[Lark Sync] Không tìm thấy URL tải xuống cho tập tin {name}")
+                    else:
+                        _logger.error(f"[Lark Sync] Lỗi API chi tiết đính kèm {att_guid}: {data_detail}")
+        except Exception as e:
+            _logger.error(f"[Lark Sync] Lỗi hệ thống khi tải tệp đính kèm: {str(e)}")    
